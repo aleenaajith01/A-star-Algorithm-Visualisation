@@ -9,3 +9,4 @@ The A* search algorithm is a popular pathfinding algorithm used in many applicat
     If the popped node is the goal node, stop the search.
     Otherwise, expand the node and update the priority queue with the neighboring nodes and their f-values.
 3. If the goal node is found, reconstruct the path.
+![image](https://github.com/user-attachments/assets/0c35d898-24a6-49ed-95bf-11ea9b947c62)
