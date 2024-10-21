@@ -1,1 +1,1 @@
-# A-star-Algorithm-Visualisatioon
+# A*-Algorithm-Visualisatioon
