@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A* Algorithm</title>
+    <style>
+        .square_grid {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .color_selection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 20px;
+            gap: 25px;
+        }
+        .color-button {
+            width: 50px;
+            height: 50px;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .label {
+            font-size: 14px;
+            position: absolute;
+            top: 55px;
+            left: 0;
+        }
+        .yellow 
+            { background-color: yellow; 
+              border-radius: 5px; }
+        .yellow:hover 
+            { background-color: #f3ed49; }
+        .green 
+            { background-color: rgb(15, 191, 30); 
+                border-radius: 5px; }
+        .green:hover 
+            { background-color: rgb(18, 231, 64); }
+        .blue{
+            background-color: rgb(92, 176, 176);}    
+        .black 
+            { background-color: black; 
+               border-radius: 5px; }
+        .black:hover 
+            { background-color: #464343; }
+        .explored 
+            { background-color: #87CEEB !important; }
+        .shortest_path {
+            width: 200px; height: 50px; 
+            border-radius: 5px;
+            background-color: #e43c1f; 
+            color: rgb(240, 240, 247);
+            cursor: pointer; font-size: 24px;
+            margin-top: 20px;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        .shortest_path:hover 
+            { background-color: #7b7375; }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            grid-template-rows: repeat(20, 1fr);
+            gap: 1.5px; width: 600px; height: 600px;
+            background-color: #464343;
+        }
+        .grid_box {
+            background-color: #ecefec;
+            width: 100%; padding-top: 100%;
+            position: relative;
+        }
+        .grid_box.yellow 
+            { background-color: yellow !important; }
+        .grid_box.green 
+            { background-color: rgb(15, 191, 30) !important; }
+        .grid_box.path 
+            { background-color: red !important; } 
+        .grid_box.black 
+            { background-color: black !important; }
+        h1 
+            { font-family: 'Times New Roman'; 
+            font-size: 40px; 
+            color: #464343; 
+            padding-left: 650px; }
+    </style>
+</head>
+<body>
+    <h1>A-star Algorithm Visualization</h1>
+    <div class="square_grid">
+        <div class="color_selection">
+            <button class="color-button yellow" data-color="yellow"><span class="label">Start</span></button>
+            <button class="color-button green" data-color="green"><span class="label">End</span></button>
+            <button class="color-button black" data-color="black"><span class="label">Obstacle</span></button>
+            <button class="color-button blue" data-color="blue"><span class="label">Explored</span></button>
+            <button id="shortest_path" class="shortest_path">Shortest Path</button>
+        </div>
+        <div class="grid-container" id="grid-container"></div>
+    </div>
+
+    <script>
+        const gridContainer = document.getElementById('grid-container');
+        const findPathButton = document.getElementById('shortest_path');
+        let selectedColor = 'yellow';
+        let startCell = null;
+        let endCell = null;
+
+        const colorButtons = document.querySelectorAll('.color-button');  //secting all elements under the class color-button
+        colorButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                selectedColor = button.dataset.color;
+                if (selectedColor === 'yellow') startCell = null;
+                if (selectedColor === 'green') endCell = null;
+            });
+        });
+
+        for (let i = 0; i < 400; i++) {
+            const gridItem = document.createElement('div');
+            gridItem.classList.add('grid_box');
+            gridItem.dataset.index = i;
+
+            gridItem.addEventListener('click', () => {      //"arrow" function is used to write function in the javascript
+                if (selectedColor === 'yellow') {
+                    if (startCell) startCell.classList.remove('yellow');
+                    startCell = gridItem;
+                    gridItem.classList.add('yellow');
+                } else if (selectedColor === 'green') {
+                    if (endCell) endCell.classList.remove('green');
+                    endCell = gridItem;
+                    gridItem.classList.add('green');
+                } else if (selectedColor === 'black') {
+                    gridItem.classList.toggle('black');
+                }
+            });
+            gridContainer.appendChild(gridItem);
+        }
+
+        findPathButton.addEventListener('click', async () => {
+            if (!startCell || !endCell) {                       //checking of both start and end points are selected or not
+                alert('Please select starting and ending points.');
+                return;
+            }
+
+            const grid = Array.from({ length: 20 }, () => Array(20).fill('0'));
+            document.querySelectorAll('.grid_box').forEach((item, index) => {
+                const row = Math.floor(index / 20);   //finding that, the cell is belongs to which row
+                const col = index % 20;               //finding that, the cell is belongs to which column
+                if (item.classList.contains('black')) grid[row][col] = '1'; //checking that the selected cell are in class "black" and giving the row and column value as 1 
+            });
+
+            const requestData = {
+                start: [Math.floor(startCell.dataset.index / 20), startCell.dataset.index % 20],
+                end: [Math.floor(endCell.dataset.index / 20), endCell.dataset.index % 20],
+                grid: grid
+            };
+
+            try {
+                const response = await fetch('/my_path/', {  //await is used for waiting till ftech opeartion completes
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData) // This converts the requestData object to JSON string.
+                });
+
+                const result = await response.json();
+                console.log('Server Response:', result); 
+
+                if (result.path) {
+                    document.querySelectorAll('.grid_box').forEach(item => item.classList.remove('explored', 'path'));
+                    
+                    result.explored.forEach(([row, col]) => {
+                        const index = row * 20 + col;
+                        document.querySelector(`.grid_box[data-index="${index}"]`).classList.add('explored');
+                    });
+
+                    result.path.forEach(([row, col]) => {
+                        const index = row * 20 + col;
+
+                        if (index !== startCell.dataset.index && index !== endCell.dataset.index) {
+                            document.querySelector(`.grid_box[data-index="${index}"]`).classList.add('path');
+                        }
+                    });
+
+                    startCell.classList.add('yellow');
+                    endCell.classList.add('green');
+                } else {
+                    alert('Path not found!');
+                }
+            } catch (error) {
+                console.error('Error fetching path:', error);
+                alert('An error occurred while finding the path.');
+            }
+        });
+    </script>
+</body>
+</html>
